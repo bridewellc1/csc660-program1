@@ -11,10 +11,9 @@ public class ProcessFileMessages {
         int delay = 0;
         int target;
         String line = null;
-        ArrayList<String> lines = new ArrayList<>();
-        ArrayList<Message> messages = new ArrayList<>();
         
-        //Assume the file is located at the root directory. we can change the code
+        ArrayList<String> lines = new ArrayList<String>();
+        ArrayList<Message> messages = new ArrayList<Message>();
         //File name should start with 0, 1,...., or 9
        // int source = Character.getNumericValue(fileName.charAt(0));
         int source = nodeId;
