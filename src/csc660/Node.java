@@ -125,7 +125,7 @@ public class Node implements Runnable {
 	 * are finished
 	 */
 	public void close() {
-		System.out.println(id + ": Stopping...");
+//		System.out.println(id + ": Stopping...");
 		listening = false;
 
 		// This will wait until the threadPool is completely shutdown before
@@ -136,7 +136,7 @@ public class Node implements Runnable {
 				while (!threadPool.isTerminated()) {
 					//
 				}
-				System.out.println(id + ": has stopped, final time is " + getTime());
+//				System.out.println(id + ": has stopped, final time is " + getTime());
 			}
 		});
 		stopListener.start();
@@ -166,34 +166,34 @@ public class Node implements Runnable {
 			public void run() {
 				try {
 					// Delay the required time and update clock
-					System.out
-							.println(id + ": Sleeping for " + m.delay / 1000 + " seconds, local time is " + getTime());
+//					System.out.println(id + ": Sleeping for " + m.delay / 1000.0 + " seconds, local time is " + getTime());
+					System.out.println("PROCESS #" + id + " Sleeping for " + m.delay / 1000.0 + " seconds Local time = " + getTime());
 					Thread.sleep(m.delay);
 					setTime(getTime() + m.delay / 1000);
-					System.out.println(id + ": Done sleeping, local time is " + getTime());
+//					System.out.println(id + ": Done sleeping, local time is " + getTime());
 
 					// Connect to the parent server and get the in and out
 					// streams
 					Socket connection = new Socket("localhost", parent.port);
-					DataInputStream in = new DataInputStream(connection.getInputStream());
 					DataOutputStream out = new DataOutputStream(connection.getOutputStream());
 
 					// Send the message
-					System.out.println(id + ": Sending message \"" + m.message + "\" to " + m.target
-							+ ", local time is " + getTime());
+//					System.out.println(id + ": Sending message \"" + m.message + "\" to " + m.target + ", local time is " + getTime());
+					System.out.println("PROCESS #" + id + " Sending message \"" + m.message + "\" to PROCESS #" + m.target + " Local time = " + getTime());
 					Message.writeMessage(m, out);
 
-					// Wait for a response
-					Message response = Message.readMessage(in);
-					if (response.getTime() > time) {
-						System.out.println(id + ": Response time from " + response.source
-								+ " is higher, updating time to " + response.getTime());
-						setTime(response.getTime() + 1);
-					} else {
-						setTime(getTime() + 1);
-					}
-					System.out.println(id + ": Received response \"" + response.message + "\" from " + response.source
-							+ ", local time is " + getTime());
+//					// (don't) Wait for a response
+//					DataInputStream in = new DataInputStream(connection.getInputStream());
+//					Message response = Message.readMessage(in);
+//					if (response.getTime() > time) {
+////						System.out.println(id + ": Response time from " + response.source
+////								+ " is higher, updating time to " + response.getTime());
+//						setTime(response.getTime() + 1);
+//					} else {
+//						setTime(getTime() + 1);
+//					}
+//					System.out.println(id + ": Received response \"" + response.message + "\" from " + response.source
+//							+ ", local time is " + getTime());
 
 					// And close the connection
 					connection.close();
@@ -215,26 +215,28 @@ public class Node implements Runnable {
 			public void run() {
 				while (listening) {
 					try {
-						System.out.println(id + ": listening for messages");
+//						System.out.println(id + ": listening for messages");
 
 						// Listen for any connections
 						Socket socket = messageListener.accept();
 						DataInputStream in = new DataInputStream(socket.getInputStream());
-						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
 						// Receive the message
 						Message received = Message.readMessage(in);
 
-						System.out.println(id + ": Received message \"" + received.message + "\" from "
-								+ received.source + ", local time is " + getTime());
+//						System.out.println(id + ": Received message \"" + received.message + "\" from "
+//								+ received.source + ", local time is " + getTime());
 						if (received.getTime() > time) {
-							System.out.println(id + ": Received time from " + received.source
-									+ " is higher, updating time to " + received.getTime());
+//							System.out.println(id + ": Received time from " + received.source
+//									+ " is higher, updating time to " + received.getTime());
 							setTime(received.getTime() + 1);
 						} else {
 							setTime(getTime() + 1);
 						}
+						System.out.println("PROCESS #" + id + " receiving message \"" + received.message + "\" Local time = " + getTime());
 
+
+//						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 						// Handle the message
 						Message m;
 						if (received.target == id) {
@@ -251,7 +253,7 @@ public class Node implements Runnable {
 									id + " wrong target, message should go to " + received.target);
 						}
 						m.setTime(getTime());
-						Message.writeMessage(m, out);
+//						Message.writeMessage(m, out); //don't response to message
 
 					} catch (IOException e) {
 						e.printStackTrace();
