@@ -1,7 +1,7 @@
 2000
 5 "message from process X to process "
 3000
-4 "message from process X to process"
+3 "message from process X to process"
 0
 5 "yup another message from X to "
 250 

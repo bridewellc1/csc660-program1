@@ -7,4 +7,4 @@
 250 
 5 "last message to from X to "
 1000
-1 "message from process X to process"
+3 "message from process X to process"
