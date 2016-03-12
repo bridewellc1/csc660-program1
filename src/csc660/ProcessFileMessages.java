@@ -5,23 +5,34 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+
 public class ProcessFileMessages {
 
-    public static ArrayList<Message> readfile(String fileName, int nodeId) throws IOException {
-        int delay = 0;
+	private int source;
+	private ArrayList<Message> messages;
+	
+    public ProcessFileMessages(int source) {
+		
+		this.source = source;
+		messages = new ArrayList<Message>();
+	}
+
+
+	public void readfile() throws IOException {
+		String fileName = source+"input.txt";
+		int delay = 0;
         int target;
         String line = null;
-        
         ArrayList<String> lines = new ArrayList<String>();
-        ArrayList<Message> messages = new ArrayList<Message>();
+       // ArrayList<Message> messages = new ArrayList<Message>();
+		//Assume the file is located at the root directory. we can change the code
         //File name should start with 0, 1,...., or 9
        // int source = Character.getNumericValue(fileName.charAt(0));
-        int source = nodeId;
 
         FileReader fileReader = new FileReader(fileName);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
         while ((line = bufferedReader.readLine()) != null) {
-            System.out.println(line);
+           // System.out.println(line);
             lines.add(line);
         }
         bufferedReader.close();
@@ -43,7 +54,20 @@ public class ProcessFileMessages {
 
         }
 
-        return messages;
     }
 
+
+	public int getSource() {
+		return source;
+	}
+
+
+
+	public ArrayList<Message> getMessages() {
+		return messages;
+	}
+
+
+	
+ 
 }
