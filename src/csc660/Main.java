@@ -16,19 +16,7 @@ public class Main {
 		// The main server
 		Server mainServer = new Server(-1, portOffset - 1);
 
-		
-		//..........
-		for (int i = 0; i < nodeCount; i++) {
-		ArrayList<Message> messages = new ArrayList<Message>();
-		ProcessFileMessages pfm = new ProcessFileMessages(i);
-		pfm.readfile();
-		messages=pfm.getMessages();
-		Node n = new Node(i, portOffset + i, messages, mainServer);
-		mainServer.addConnection(n);
-		nodes.add(n);
-		}
-		//.......
-/*		boolean debug = true;
+		boolean debug = false;
 		if (debug) {
 			int messageCount = 10; // how many messages each node should send
 			int maxDelay = 3000; // max possible delay
@@ -58,9 +46,17 @@ public class Main {
 				nodes.add(n);
 			}
 		} else {
-			// read from file
+			for (int i = 0; i < nodeCount; i++) {
+				ArrayList<Message> messages = new ArrayList<Message>();
+				ProcessFileMessages pfm = new ProcessFileMessages(i);
+				pfm.readfile();
+				messages = pfm.getMessages();
+				Node n = new Node(i, portOffset + i, messages, mainServer);
+				mainServer.addConnection(n);
+				nodes.add(n);
+			}
 		}
-*/
+		
 		// Start the main server thread
 		Thread serverThread = new Thread(mainServer);
 		serverThread.start();
