@@ -22,14 +22,14 @@ public class Main {
 
 		int nodeCount = 10; // how many nodes to spawn
 		int messageCount = 10; // how many messages each node should send
-		int maxDelay = 1000; // max possible delay
+		int maxDelay = 3000; // max possible delay
 		int portOffset = 7777; // the port offset
 
 		// The spawned nodes
 		ArrayList<Node> nodes = new ArrayList<Node>(nodeCount);
 
 		// The main server
-		Server mainServer = new Server(-1, portOffset-1);
+		Server mainServer = new Server(-1, portOffset - 1);
 
 		// Spawn nodeCount random nodes with messageCount random messages each
 		// with a random delay up to maxDelay. Create nodes before starting
@@ -105,6 +105,16 @@ class Node implements Runnable {
 	ServerSocket messageListener;
 
 	private boolean listening = true;
+
+	private int time = 0;
+
+	public synchronized int getTime() {
+		return time;
+	}
+
+	public synchronized void setTime(int t) {
+		this.time = t;
+	}
 
 	/**
 	 * @param id
@@ -194,12 +204,21 @@ class Node implements Runnable {
 					DataOutputStream out = new DataOutputStream(connection.getOutputStream());
 
 					// Send the message
-					System.out.println(id + ": Sending message to " + m.target + ": " + m.message);
+					System.out.println(
+							id + ": Sending message to " + m.target + " at time " + getTime() + ": " + m.message);
 					Message.writeMessage(m, out);
 
 					// Wait for a response
 					Message response = Message.readMessage(in);
-					System.out.println(id + ": Received response from " + response.source + ": " + response.message);
+					if (response.getTime() > time) {
+						System.out.println(id + ": Response time from " + response.source
+								+ " is higher, updating time to " + response.getTime());
+						setTime(response.getTime() + 1);
+					} else {
+						setTime(getTime() + 1);
+					}
+					System.out.println(id + ": Received response from " + response.source + " at time " + getTime()
+							+ ": " + response.message);
 
 					// And close the connection
 					connection.close();
@@ -234,7 +253,9 @@ class Node implements Runnable {
 								Message.writeMessage(new Message(id, received.source, "Closing " + id), out);
 								close();
 							} else {
-								Message.writeMessage(new Message(id, received.source, "Hello from " + id), out);
+								Message m = new Message(id, received.source, "Hello from " + id);
+								m.setTime(time);
+								Message.writeMessage(m, out);
 							}
 						} else {
 							Message.writeMessage(new Message(id, received.source,
@@ -305,8 +326,7 @@ class Server extends Node {
 
 						// Wait for a response
 						Message response = Message.readMessage(in);
-						System.out
-								.println(id + ": Received response from " + response.source + ": " + response.message);
+						System.out.println(id + ": Received close response from " + response.source);
 
 						// And close the connection
 						connection.close();
@@ -336,7 +356,8 @@ class Server extends Node {
 
 					// Wait for a response
 					Message response = Message.readMessage(in);
-					System.out.println(id + ": Received response from " + response.source + ": " + response.message);
+					System.out.println(
+							id + ": Received forward response from " + response.source + " for " + response.target);
 
 					// And close the connection
 					connection.close();
@@ -371,9 +392,11 @@ class Server extends Node {
 						if (received.target == id) {
 							if (received.message.equals(Message.done)) {
 								incrementDone();
-								Message.writeMessage(new Message(id, received.source, "Done message received " + id), out);
+								Message.writeMessage(new Message(id, received.source, "Done message received " + id),
+										out);
 							} else {
-								Message.writeMessage(new Message(id, received.source, "Direct message from " + id), out);
+								Message.writeMessage(new Message(id, received.source, "Direct message from " + id),
+										out);
 							}
 						} else {
 							System.out.println(
@@ -407,6 +430,7 @@ class Message {
 	public final int source;
 	public final int target;
 	public final String message;
+	private int time;
 
 	public static String done = "done";
 	public static String close = "close";
@@ -440,12 +464,20 @@ class Message {
 		this.message = message;
 	}
 
+	public void setTime(int t) {
+		this.time = t;
+	}
+
+	public int getTime() {
+		return this.time;
+	}
+
 	@Override
 	public String toString() {
 		return "delay: " + delay + "\n" + "source: " + source + "\n" + "target: " + target + "\n" + "message: "
-				+ message + "\n";
+				+ message + "\n" + "time: " + time + "\n";
 	}
-	
+
 	/**
 	 * Write a message to the output stream
 	 * 
@@ -459,6 +491,7 @@ class Message {
 		out.writeInt(m.source);
 		out.writeInt(m.target);
 		out.writeUTF(m.message);
+		out.writeInt(m.time);
 	}
 
 	/**
@@ -470,7 +503,9 @@ class Message {
 	 * @throws IOException
 	 */
 	public static Message readMessage(DataInputStream in) throws IOException {
-		return new Message(in.readInt(), in.readInt(), in.readUTF());
+		Message m = new Message(in.readInt(), in.readInt(), in.readUTF());
+		m.setTime(in.readInt());
+		return m;
 	}
 }
 
