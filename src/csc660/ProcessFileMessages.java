@@ -19,7 +19,7 @@ public class ProcessFileMessages {
 
 
 	public void readfile() throws IOException {
-		String fileName = source+"input.txt";
+		String fileName = "src/data/"+source+"input.txt";
 		int delay = 0;
         int target;
         String line = null;
