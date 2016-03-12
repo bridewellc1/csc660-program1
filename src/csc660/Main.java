@@ -22,20 +22,21 @@ public class Main {
 
 		int nodeCount = 10; // how many nodes to spawn
 		int messageCount = 10; // how many messages each node should send
-		int maxDelay = 3000; // max possible delay
+		int maxDelay = 1000; // max possible delay
 		int portOffset = 7777; // the port offset
 
 		// The spawned nodes
 		ArrayList<Node> nodes = new ArrayList<Node>(nodeCount);
 
-		Server mainServer = new Server(0, portOffset);
+		// The main server
+		Server mainServer = new Server(-1, portOffset-1);
 
 		// Spawn nodeCount random nodes with messageCount random messages each
 		// with a random delay up to maxDelay. Create nodes before starting
 		// them so all required ports are open
 		Random r = new Random();
-		for (int i = 1; i < nodeCount+1; i++) {
-			ArrayList<Message> instructions = new ArrayList<Message>();
+		for (int i = 0; i < nodeCount; i++) {
+			ArrayList<Message> messages = new ArrayList<Message>();
 			for (int j = 0; j < messageCount; j++) {
 				int d = r.nextInt(maxDelay);
 
@@ -46,14 +47,15 @@ public class Main {
 				}
 
 				String msg = "Hello from " + i;
-				instructions.add(new Message(d, i, t, msg));
+				messages.add(new Message(d, i, t, msg));
 			}
 
-			Node n = new Node(i, portOffset + i, instructions, mainServer);
+			Node n = new Node(i, portOffset + i, messages, mainServer);
 			mainServer.addConnection(n);
 			nodes.add(n);
 		}
 
+		// Start the main server thread
 		Thread serverThread = new Thread(mainServer);
 		serverThread.run();
 
@@ -101,7 +103,7 @@ class Node implements Runnable {
 	 * The message listener socket
 	 */
 	ServerSocket messageListener;
-	
+
 	private boolean listening = true;
 
 	/**
@@ -146,18 +148,6 @@ class Node implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	/**
-	 * @param n
-	 *            The new parent node
-	 */
-	public void setParent(Node n) {
-		this.parent = n;
-	}
-
-	public Node getParent() {
-		return this.parent;
 	}
 
 	@Override
@@ -205,10 +195,10 @@ class Node implements Runnable {
 
 					// Send the message
 					System.out.println(id + ": Sending message to " + m.target + ": " + m.message);
-					writeMessage(m, out);
+					Message.writeMessage(m, out);
 
 					// Wait for a response
-					Message response = readMessage(in);
+					Message response = Message.readMessage(in);
 					System.out.println(id + ": Received response from " + response.source + ": " + response.message);
 
 					// And close the connection
@@ -222,33 +212,6 @@ class Node implements Runnable {
 		});
 	}
 
-	/**
-	 * Write a message to the output stream
-	 * 
-	 * @param m
-	 *            Message
-	 * @param out
-	 *            Output stream
-	 * @throws IOException
-	 */
-	public static void writeMessage(Message m, DataOutputStream out) throws IOException {
-		out.writeInt(m.source);
-		out.writeInt(m.target);
-		out.writeUTF(m.message);
-	}
-
-	/**
-	 * Read a message from the input stream
-	 * 
-	 * @param in
-	 *            The input stream
-	 * @return The message
-	 * @throws IOException
-	 */
-	public static Message readMessage(DataInputStream in) throws IOException {
-		return new Message(in.readInt(), in.readInt(), in.readUTF());
-	}
-
 	private void receiveMessages() {
 		threadPool.submit(new Runnable() {
 			@Override
@@ -256,25 +219,25 @@ class Node implements Runnable {
 				while (listening) {
 					try {
 						System.out.println(id + ": Waiting for message");
-						
+
 						// Listen for any connections
 						Socket socket = messageListener.accept();
 						DataInputStream in = new DataInputStream(socket.getInputStream());
 						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
 						// Receive the message
-						Message received = readMessage(in);
+						Message received = Message.readMessage(in);
 
 						// Handle the message
 						if (received.target == id) {
 							if (received.message.equals(Message.close)) {
-								writeMessage(new Message(id, received.source, "Closing " + id), out);
+								Message.writeMessage(new Message(id, received.source, "Closing " + id), out);
 								close();
 							} else {
-								writeMessage(new Message(id, received.source, "Hello from " + id), out);
+								Message.writeMessage(new Message(id, received.source, "Hello from " + id), out);
 							}
 						} else {
-							writeMessage(new Message(id, received.source,
+							Message.writeMessage(new Message(id, received.source,
 									id + " received message meant for " + received.target), out);
 						}
 					} catch (IOException e) {
@@ -338,11 +301,12 @@ class Server extends Node {
 
 						// Send the message
 						System.out.println(id + ": Sending close message to " + n.id);
-						writeMessage(new Message(id, n.id, Message.close), out);
-						
+						Message.writeMessage(new Message(id, n.id, Message.close), out);
+
 						// Wait for a response
-						Message response = readMessage(in);
-						System.out.println(id + ": Received response from " + response.source + ": " + response.message);
+						Message response = Message.readMessage(in);
+						System.out
+								.println(id + ": Received response from " + response.source + ": " + response.message);
 
 						// And close the connection
 						connection.close();
@@ -368,10 +332,10 @@ class Server extends Node {
 
 					// Send the message
 					System.out.println(id + ": Forwarding message to " + m.target + ": " + m.message);
-					writeMessage(m, out);
+					Message.writeMessage(m, out);
 
 					// Wait for a response
-					Message response = readMessage(in);
+					Message response = Message.readMessage(in);
 					System.out.println(id + ": Received response from " + response.source + ": " + response.message);
 
 					// And close the connection
@@ -401,21 +365,21 @@ class Server extends Node {
 						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
 						// Receive the message
-						Message received = readMessage(in);
+						Message received = Message.readMessage(in);
 
 						// Handle the message
 						if (received.target == id) {
 							if (received.message.equals(Message.done)) {
 								incrementDone();
-								writeMessage(new Message(id, received.source, "Done message received " + id), out);
+								Message.writeMessage(new Message(id, received.source, "Done message received " + id), out);
 							} else {
-								writeMessage(new Message(id, received.source, "Direct message from " + id), out);
+								Message.writeMessage(new Message(id, received.source, "Direct message from " + id), out);
 							}
 						} else {
 							System.out.println(
 									id + ": Forwarding message from " + received.source + " to " + received.target);
 							Future<Message> response = forwardMessage(received);
-							writeMessage(response.get(), out);
+							Message.writeMessage(response.get(), out);
 						}
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -443,7 +407,6 @@ class Message {
 	public final int source;
 	public final int target;
 	public final String message;
-	private ArrayList<Integer> path = new ArrayList<Integer>();
 
 	public static String done = "done";
 	public static String close = "close";
@@ -475,28 +438,39 @@ class Message {
 		this.delay = delay;
 		this.target = target;
 		this.message = message;
-		this.path.add(this.source);
-	}
-
-	/**
-	 * @param source
-	 *            Add a node to the path
-	 */
-	public void addToPath(int id) {
-		path.add(new Integer(id));
-	}
-
-	/**
-	 * @return path
-	 */
-	public ArrayList<Integer> getPath() {
-		return path;
 	}
 
 	@Override
 	public String toString() {
 		return "delay: " + delay + "\n" + "source: " + source + "\n" + "target: " + target + "\n" + "message: "
 				+ message + "\n";
+	}
+	
+	/**
+	 * Write a message to the output stream
+	 * 
+	 * @param m
+	 *            Message
+	 * @param out
+	 *            Output stream
+	 * @throws IOException
+	 */
+	public static void writeMessage(Message m, DataOutputStream out) throws IOException {
+		out.writeInt(m.source);
+		out.writeInt(m.target);
+		out.writeUTF(m.message);
+	}
+
+	/**
+	 * Read a message from the input stream
+	 * 
+	 * @param in
+	 *            The input stream
+	 * @return The message
+	 * @throws IOException
+	 */
+	public static Message readMessage(DataInputStream in) throws IOException {
+		return new Message(in.readInt(), in.readInt(), in.readUTF());
 	}
 }
 
