@@ -47,10 +47,7 @@ public class Main {
 			}
 		} else {
 			for (int i = 0; i < nodeCount; i++) {
-				ArrayList<Message> messages = new ArrayList<Message>();
-				ProcessFileMessages pfm = new ProcessFileMessages(i);
-				pfm.readfile();
-				messages = pfm.getMessages();
+				ArrayList<Message> messages = ProcessFileMessages.readfile(i);
 				Node n = new Node(i, portOffset + i, messages, mainServer);
 				mainServer.addConnection(n);
 				nodes.add(n);

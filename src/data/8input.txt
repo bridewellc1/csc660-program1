@@ -1,10 +1,18 @@
-2000
-5 "message from process X to process "
-3000
-4 "message from process X to process"
-0
-5 "yup another message from X to "
-250 
-5 "last message to from X to "
-1000
-1 "message from process X to process"
+3900
+3 "message from process 8 to process 3"
+1900
+0 "message from process 8 to process 0"
+3500
+2 "message from process 8 to process 2"
+2700
+9 "message from process 8 to process 9"
+3500
+1 "message from process 8 to process 1"
+4600
+7 "message from process 8 to process 7"
+500
+5 "message from process 8 to process 5"
+1100
+6 "message from process 8 to process 6"
+3500
+4 "message from process 8 to process 4"

@@ -167,9 +167,11 @@ public class Node implements Runnable {
 				try {
 					// Delay the required time and update clock
 //					System.out.println(id + ": Sleeping for " + m.delay / 1000.0 + " seconds, local time is " + getTime());
-					System.out.println("PROCESS #" + id + " Sleeping for " + m.delay / 1000.0 + " seconds Local time = " + getTime());
-					Thread.sleep(m.delay);
-					setTime(getTime() + m.delay / 1000);
+					if(m.delay > 0){
+						System.out.println("PROCESS #" + id + " Sleeping for " + m.delay / 1000.0 + " seconds Local time = " + getTime());
+						Thread.sleep(m.delay);
+						setTime(getTime() + m.delay / 1000.0);
+					}
 //					System.out.println(id + ": Done sleeping, local time is " + getTime());
 
 					// Connect to the parent server and get the in and out
@@ -229,9 +231,9 @@ public class Node implements Runnable {
 						if (received.getTime() > time) {
 //							System.out.println(id + ": Received time from " + received.source
 //									+ " is higher, updating time to " + received.getTime());
-							setTime(received.getTime() + 1);
+							setTime(received.getTime() + 1.0);
 						} else {
-							setTime(getTime() + 1);
+							setTime(getTime() + 1.0);
 						}
 						System.out.println("PROCESS #" + id + " receiving message \"" + received.message + "\" Local time = " + getTime());
 
